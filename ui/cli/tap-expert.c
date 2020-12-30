@@ -22,6 +22,12 @@
 
 void register_tap_listener_expert_info(void);
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/stat.h>
+void output_expert_info_to_data_file(const expert_info_t *ei,
+                                     packet_info *pinfo);
+
 /* Tap data */
 typedef enum severity_level_t {
     comment_level = 0,
@@ -106,6 +112,8 @@ expert_stat_packet(void *tapdata, packet_info *pinfo _U_, epan_dissect_t *edt _U
     if (severity_level < lowest_report_level) {
         return TAP_PACKET_REDRAW; /* XXX - TAP_PACKET_DONT_REDRAW? */
     }
+
+    output_expert_info_to_data_file(ei, pinfo);
 
     /* If a duplicate just bump up frequency.
        TODO: could make more efficient by avoiding linear search...*/
@@ -284,6 +292,50 @@ register_tap_listener_expert_info(void)
 {
     register_stat_tap_ui(&expert_stat_ui, NULL);
 }
+
+void output_expert_info_to_data_file(const expert_info_t *ei,
+                                     packet_info *pinfo)
+{
+       char *dir_name = "expert_info";
+       char file_name[256];
+       struct stat statBuf;
+       FILE *data_file;
+
+       file_name[0] = 0; /* wite null char first*/
+
+       /* if expert_info dir doesn't exist create it*/
+       if (stat(dir_name, &statBuf) != 0){
+               if( mkdir(dir_name, 0755) != 0 ){
+                       printf("ERROR: can't make dir");
+                       return;
+               }
+       }
+
+       /* make file name to write data*/
+       snprintf(file_name, sizeof(file_name),
+                "%s/%d.data", dir_name, pinfo->num);
+
+       /* if file alread exits just output warning*/
+       if (stat(file_name, &statBuf) == 0){
+               printf("WARN: file already exists %d\n", pinfo->num);
+               return;
+       }
+
+       /* open file and write data */
+       if( (data_file = fopen(file_name, "w") ) == NULL ){
+               printf("ERROR: failed to open %d\n", pinfo->num);
+               return;
+       }
+
+       fprintf(data_file,
+                       "expert_info:\n"\
+                       "  summary: %s\n"\
+                       "  frame_no: %d\n",
+                       ei->summary, pinfo->num);
+
+       fclose(data_file);
+}
+
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
