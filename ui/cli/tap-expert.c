@@ -296,42 +296,19 @@ register_tap_listener_expert_info(void)
 void output_expert_info_to_data_file(const expert_info_t *ei,
                                      packet_info *pinfo)
 {
-       char *dir_name = "expert_info";
-       char file_name[256];
-       struct stat statBuf;
+       char *file_name = "expert_info.yaml";
        FILE *data_file;
 
-       file_name[0] = 0; /* wite null char first*/
-
-       /* if expert_info dir doesn't exist create it*/
-       if (stat(dir_name, &statBuf) != 0){
-               if( mkdir(dir_name, 0755) != 0 ){
-                       printf("ERROR: can't make dir");
-                       return;
-               }
-       }
-
-       /* make file name to write data*/
-       snprintf(file_name, sizeof(file_name),
-                "%s/%d.data", dir_name, pinfo->num);
-
-       /* if file alread exits just output warning*/
-       if (stat(file_name, &statBuf) == 0){
-               printf("WARN: file already exists %d\n", pinfo->num);
-               return;
-       }
-
        /* open file and write data */
-       if( (data_file = fopen(file_name, "w") ) == NULL ){
+       if( (data_file = fopen(file_name, "a") ) == NULL ){
                printf("ERROR: failed to open %d\n", pinfo->num);
                return;
        }
 
        fprintf(data_file,
-                       "expert_info:\n"\
-                       "  summary: %s\n"\
-                       "  frame_no: %d\n",
-                       ei->summary, pinfo->num);
+                       "- frame_no: %d\n"\
+                       "  summary: %s\n",
+                       pinfo->num, ei->summary);
 
        fclose(data_file);
 }
