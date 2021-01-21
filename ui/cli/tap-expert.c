@@ -307,7 +307,7 @@ void output_expert_info_to_data_file(const expert_info_t *ei,
 
        fprintf(data_file,
                        "- frame_no: %d\n"\
-                       "  summary: %s\n",
+                       "  summary: \"%s\"\n",
                        pinfo->num, ei->summary);
 
        fclose(data_file);
